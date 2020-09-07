@@ -7,6 +7,7 @@
 #include <linux/kernel.h>
 #include <linux/rcupdate.h>
 #include <linux/slab.h>
+#include <linux/battery_saver.h>
 #include <trace/events/sched.h>
 
 #include "sched.h"
@@ -743,7 +744,7 @@ int schedtune_task_boost(struct task_struct *p)
 	struct schedtune *st;
 	int task_boost;
 
-	if (!unlikely(schedtune_initialized))
+	if (unlikely(!schedtune_initialized) || is_battery_saver_on())
 		return 0;
 
 	/* Get task boost value */
@@ -760,7 +761,7 @@ int schedtune_prefer_idle(struct task_struct *p)
 	struct schedtune *st;
 	int prefer_idle;
 
-	if (!unlikely(schedtune_initialized))
+	if (unlikely(!schedtune_initialized) || is_battery_saver_on())
 		return 0;
 
 	/* Get prefer_idle value */
@@ -776,6 +777,9 @@ static u64
 prefer_idle_read(struct cgroup_subsys_state *css, struct cftype *cft)
 {
 	struct schedtune *st = css_st(css);
+
+	if (is_battery_saver_on())
+		return 0;
 
 	return st->prefer_idle;
 }
@@ -794,6 +798,9 @@ static s64
 boost_read(struct cgroup_subsys_state *css, struct cftype *cft)
 {
 	struct schedtune *st = css_st(css);
+
+	if (is_battery_saver_on())
+		return 0;
 
 	return st->boost;
 }
